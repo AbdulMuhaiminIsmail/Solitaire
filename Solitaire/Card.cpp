@@ -122,7 +122,7 @@ public:
 
     void display() {
         if (hidden) {
-            cout << "[ ]";
+            cout << "[]";
             return; 
         }
 

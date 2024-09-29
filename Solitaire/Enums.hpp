@@ -3,7 +3,7 @@
 
 using namespace std;
 
-enum Suits { Heart, Diamond, Spade, Club };
+enum Suits { Club, Diamond, Spade, Heart };
 
 enum Ranks { Ace = 1, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King };
 

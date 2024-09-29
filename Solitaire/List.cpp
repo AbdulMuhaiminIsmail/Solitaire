@@ -126,39 +126,47 @@ public:
 
 	Node* accessNode(int positionFromTail) {
 		if (!head) return nullptr;
+
 		Node* iter = tail;
-		for (int index = 1; index < positionFromTail; index++, iter = iter->prev);
+		for (int index = 1; iter && index < positionFromTail; index++, iter = iter->prev);
 		return iter;
 	}
 
 	Node*& extract(int numberOfNodes) {
-		if (!head) return nullptr;
 		Node* node = accessNode(numberOfNodes);
-		if (!node) return nullptr;
+		if (!node) return node;
+
+		if (head == tail) {
+			head = tail = nullptr;
+			return node;
+		}
+
+		tail = node->prev;
 		node->prev->next = nullptr;
-		node->prev = nullptr;
 		return node;
 	}
 
-	void append(DLL<T>*& list) {
+	void append(Node*& list, int length) {
+		if (!list) return;
+
 		tail->next = list;
 		list->prev = tail;
-		tail = list->tail;
+		for (int i = 0; i < length; i++, tail = tail->next);
 	}
 
-	ListIterator fbegin() {
+	typename ListIterator fbegin() const {
 		return ListIterator(head);
 	}
 
-	ListIterator fend() {
+	typename ListIterator fend() const {
 		return ListIterator(nullptr);
 	}
 
-	ListIterator rbegin() {
+	typename ListIterator rbegin() const {
 		return ListIterator(tail);
 	}
 
-	ListIterator rend() {
+	typename ListIterator rend() const {
 		return ListIterator(nullptr);
 	}
 
@@ -172,4 +180,5 @@ public:
 	}
 
 };
+
 
