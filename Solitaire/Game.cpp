@@ -60,21 +60,6 @@ public:
         for (auto it = stockPile.begin(); it != stockPile.end(); ++it) {
             (*it)->flipHiddenStatus();
         }
-
-
-        //for (int i = 0; i < 7; i++) {
-        //    for (auto it = tableaus[i].fbegin(); it != tableaus[i].fend(); ++it) {
-        //        (*it)->display();
-        //    }
-        //    cout << endl;
-        //}
-
-        
-        //while (!stockPile.isEmpty()) {
-        //    Card* card = stockPile.pop();
-        //    card->display();
-        //}
-
     }
 
     void printGameState() {
@@ -215,7 +200,7 @@ public:
 
         // Ensuring difference of one in ranks
 
-        if (destTab->data->getRank() - srcTab->data->getRank() == 1) {
+        if (destTab->data->getRank() - srcTab->data->getRank() != 1) {
             cout << "You can arrange cards only in proper descending order in tableaus." << endl;
             return;
         }
@@ -238,9 +223,99 @@ public:
 
     }
 
-    void moveFromTableauToFoundation();
+    void moveFromTableauToFoundation(int tableauNumber, int foundationNumber) {
+        // Ensuring tableau is not empty
+        
+        --tableauNumber;
+        Card* tab = tableaus[tableauNumber].getTail();
 
-    void moveFromFoundationToTableau();
+        if (!tab) {
+            cout << "You can not pick card from an empty tableau. " << endl;
+            return;
+        }
+
+        // Ensuring same suits
+        
+        if (tab->getSuit() == 1 && foundationNumber != 1 ||
+            tab->getSuit() == 2 && foundationNumber != 2 ||
+            tab->getSuit() == 3 && foundationNumber != 3 ||
+            tab->getSuit() == 4 && foundationNumber != 4) {
+            cout << "You can only place cards with same suit as foundation. " << endl;
+            return;
+        }
+
+        // Ensuring first card to be Ace
+
+        --foundationNumber;
+
+        if (foundations[foundationNumber].isEmpty() && tab->getRank() != 1) {
+            cout << "You can only start a foundation with Ace. " << endl;
+            return;
+        }
+
+        if (foundations[foundationNumber].isEmpty() && tab->getRank() == 1) {
+            auto temp = tableaus[tableauNumber].removeTail();   
+            foundations[foundationNumber].push(temp->data);    
+            return;
+        }
+        
+        // Ensuring ascending order
+
+        if (tab->getRank() - foundations[foundationNumber].getHead()->getRank() != 1) {
+            cout << "You can place cards only in proper ascending order in foundations. " << endl;
+            return;
+        }
+
+        auto temp = tableaus[tableauNumber].removeTail();   // Returns the tail by reference
+        foundations[foundationNumber].push(temp->data);     // Pushes to the foundation as the new head
+    }
+
+    void moveFromFoundationToTableau(int foundationNumber, int tableauNumber) {
+        // Ensuring the foundation has some card to place
+
+        Stack<Card*> fnd = foundations[foundationNumber - 1];
+
+        if (fnd.isEmpty()) {
+            cout << "You can not pick card from an empty foundation. " << endl;
+            return;
+        }
+
+        --tableauNumber;
+        Card* tab = tableaus[tableauNumber].getTail();
+
+        // Ensuring only King is placed as tableau starter
+
+        if (!tab && fnd.getHead()->getRank() != 13) {
+            cout << "You can only start a tableau with a King card." << endl;
+            return;
+        }
+
+        // Ensuring only King is placed as tableau starter
+
+        if (!tab && fnd.getHead()->getRank() == 13) {
+            tableaus[tableauNumber].insertTail(fnd.pop());
+            return;
+        }
+
+        // Ensuring difference of one in ranks
+
+        if (tab->getRank() - fnd.getHead()->getRank() != 1) {
+            cout << "You can arrange cards only in proper descending order in tableaus." << endl;
+            return;
+        }
+
+        // Ensuring opposite suits
+
+        if ((foundationNumber == 1 || foundationNumber == 3) && (tab->getSuit() != 2 && tab->getSuit() != 4) ||
+            (foundationNumber == 2 || foundationNumber == 4) && (tab->getSuit() != 1 && tab->getSuit() != 3)) {
+            cout << "You can not place cards of the same suit together. " << endl;
+            return;
+        }
+
+        // Finally moving card from foundation to tableau
+
+        tableaus[tableauNumber].insertTail(fnd.pop());
+    }
 
     void moveFromWasteToFoundation(int foundationNumber) {
         if (foundationNumber < 1 || foundationNumber > 4) {
@@ -248,10 +323,14 @@ public:
             return;
         }
         
+        // Ensuring wastePile is not empty
+        
         if (wastePile.isEmpty()) {
             cout << "You can not pick card from an empty waste pile. " << endl;
             return;
         }
+        
+        // Ensuring cards have same suits
         
         Card* wasteHead = wastePile.getHead();
 
@@ -263,18 +342,79 @@ public:
             return;
         }
 
+        // Ensuring first card to be Ace
+        
         --foundationNumber;
 
+        if (foundations[foundationNumber].isEmpty() && wasteHead->getRank() != 1) {
+            cout << "You can only start a foundation with Ace. " << endl;
+            return;
+        }
+
+        if (foundations[foundationNumber].isEmpty() && wasteHead->getRank() == 1) {
+            Card* temp = wastePile.pop();
+            foundations[foundationNumber].push(temp);
+            return;
+        }
+
+        // Ensuring ascending order
+        
         if (wasteHead->getRank() - foundations[foundationNumber].getHead()->getRank() != 1) {
             cout << "You can place cards only in proper ascending order in foundations. " << endl;
             return;
         }
         
+        // Eventually adding on top of existing foundation
+        
         Card* temp = wastePile.pop();
         foundations[foundationNumber].push(temp);
     }
 
-    void moveFromWasteToTableau();
+    void moveFromWasteToTableau(int tableauNumber) {
+        // Ensuring wastepile has some card to place
+        
+        if (wastePile.isEmpty()) {
+            cout << "You can not pick card from an empty waste pile. " << endl;
+            return;
+        }
+
+        --tableauNumber;
+        Card* tab = tableaus[tableauNumber].getTail();
+
+        // Ensuring only King is placed as tableau starter
+
+        if (!tab && wastePile.getHead()->getRank() != 13) {
+            cout << "You can only start a tableau with a King card." << endl;
+            return;
+        }
+
+        // Ensuring only King is placed as tableau starter
+
+        if (!tab && wastePile.getHead()->getRank() == 13) {
+            tableaus[tableauNumber].insertTail(wastePile.pop());
+            return;
+        }
+
+        // Ensuring difference of one in ranks
+
+        if (tab->getRank() - wastePile.getHead()->getRank() != 1) {
+            cout << "You can arrange cards only in proper descending order in tableaus." << endl;
+            return;
+        }
+
+        // Ensuring opposite suits
+
+        if ((wastePile.getHead()->getSuit() == 1 || wastePile.getHead()->getSuit() == 3) && (tab->getSuit() != 2 && tab->getSuit() != 4) ||
+            (wastePile.getHead()->getSuit() == 2 || wastePile.getHead()->getSuit() == 4) && (tab->getSuit() != 1 && tab->getSuit() != 3)) {
+            cout << "You can not place cards of the same suit together. " << endl;
+            return;
+        }
+
+        // Finally moving card from waste to tableau
+
+        tableaus[tableauNumber].insertTail(wastePile.pop());
+
+    }
 
     void drawCardFromStock() {
         // Ensuring circulation if stockpile is empty
@@ -290,13 +430,16 @@ public:
         wastePile.push(stockHead);
     }
 
-    bool isGameWon();
+    bool isGameWon() {
+        return (stockPile.isEmpty() && wastePile.isEmpty() && foundations[0].getSize() == 13 && foundations[1].getSize() == 13 && foundations[2].getSize() == 13 && foundations[3].getSize() == 13);
+    }
 
 };
 
 int main() {
     SetConsoleOutputCP(CP_UTF8);  // Set the console to UTF-8
-    Game game;   
-    game.printGameState();             
+    Game game;
+    game.printGameState();
+
     return 0;
 }

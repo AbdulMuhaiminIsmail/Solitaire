@@ -98,6 +98,13 @@ public:
 		if(tail) tail->next = nullptr;
 	}
 
+	Node*& removeTail() {
+		Node* temp = tail;
+		tail = tail->prev;
+		if (tail) tail->next = nullptr;
+		return temp;
+	}
+
 	void printForward() const {
 		if (!head) return;
 		for (auto iter = fbegin(); iter != fend(); ++iter) {
@@ -149,6 +156,13 @@ public:
 	void append(Node*& list, int length) {
 		if (!list) return;
 
+		if (!head) {
+			head = tail = list;
+			list->prev = nullptr;
+			for (int i = 1; i < length; i++, tail = tail->next);
+			return;
+		}
+		
 		tail->next = list;
 		list->prev = tail;
 		for (int i = 0; i < length; i++, tail = tail->next);
