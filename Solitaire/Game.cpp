@@ -4,6 +4,7 @@
 #include <algorithm> 
 #include <random>    
 #include <ctime>  
+#include <string>
 #include "Card.cpp"
 #include "Enums.hpp"
 #include "Stack.cpp"
@@ -143,10 +144,10 @@ public:
             for (int j = 0; j < 7; j++) {
                 if (iters[j] != DLL<Card*>::ListIterator(nullptr)) {
                     (*iters[j])->display();
-                    ((*iters[j])->getRank() != 10) ? cout << "              " : cout << "             "; // Handling 10 rank case because it disturbs alignment
+                    cout << "\t\t";
                 }
                 else {
-                    cout << "                ";
+                    cout << "\t\t";
                 }
                 ++iters[j];
             }
@@ -154,18 +155,101 @@ public:
         }
     }
 
-    void parseCommand(Command command) {
+    Command inputCommand() {
+        string line;
+        cout << "Please enter command with proper syntax, given in the instruction set: ";
+        getline(cin, line);
+
+        string cmd = "";
+        string src = "";
+        string dest = "";
+        int count = 0;
+
+        cmd = line.substr(0, 4);
+
+        if (cmd != "draw" && cmd != "quit") {
+            if (line[5] == 'w') {
+                src[0] = 'w';
+                dest = line.substr(7, 8);
+                count = line[10];
+            }
+            else {
+                src = line.substr(5, 6);
+                dest = line.substr(8, 9);
+                count = line[11];
+            }
+        }
+
+        return Command(cmd, src, dest, count);
 
     }
     
-    void moveFromTableauToTableau(int src, int dest, int n) {
-        // Ensuring src and dest indices are not out of bounds
-        
-        if (src < 1 || src > 7 || dest < 1 || dest > 7) {
-            cout << "Invalid tableau ids." << endl;
+    void parseCommand(Command command) {
+        if (command.getCmd() == "quit" || command.getCmd() == "exit") {
+            cout << "Thanks for playing Solitaire! Hope to see you again soon! ";
             return;
         }
 
+        else if (command.getCmd() == "draw") {
+            drawCardFromStock();
+            return;
+        }
+
+        else if (command.getCmd() == "move") {
+            char src = command.getSrc()[0];
+            int srcX = command.getSrc()[1] - 48;
+            char dest = command.getDest()[0];
+            int destX = command.getDest()[1] - 48;
+            int n = command.getCount() - 48;
+
+            // Ensuring proper valid tableau ids
+            
+            if ((src == 'c' &&  srcX < 0 || srcX > 7) || (dest == 'c' && destX < 0 || destX > 7)) {
+                cout << "Invalid tableau ids. " << endl;
+                return;
+            }
+
+            // Ensuring proper valid foundations ids
+
+            if ((src == 'f' && (srcX < 0 || srcX > 4)) || (dest == 'f' && (destX < 0 || destX > 4))) {
+                cout << "Invalid foundation ids. " << endl;
+                return;
+            }
+
+            // Calling appropriate functions
+            
+            if (src == 'c' && dest == 'c') {
+                moveFromTableauToTableau(srcX, destX, n);
+                return;
+            }
+
+            if (src == 'c' && dest == 'f') {
+                moveFromTableauToFoundation(srcX, destX);
+                return;
+            }
+
+            if (src == 'f' && dest == 'c') {
+                moveFromFoundationToTableau(srcX, destX);
+                return;
+            }
+
+            if (src == 'w' && dest == 'f') {
+                moveFromWasteToFoundation(destX);
+                return;
+            }
+
+            if (src == 'w' && dest == 'c') {
+                moveFromWasteToTableau(destX);
+                return;
+            } 
+        }
+        else {
+            cout << "Invalid command or syntax. " << endl;
+            return;
+        }
+    }
+    
+    void moveFromTableauToTableau(int src, int dest, int n) {
         --src, --dest;                                      // Converting tableau numbers to indices
         auto srcTab = tableaus[src].accessNode(n);          // Accessing ptr to head of sublist to append
         auto destTab = tableaus[dest].accessNode(1);        // Accessing ptr to tail of destination tableau
@@ -219,7 +303,7 @@ public:
 
         // Flipping last card of source destination (if required)
 
-        if (tableaus[src].getTail()->isHidden()) tableaus[src].getTail()->flipHiddenStatus();
+        if (tableaus[src].getTail() && tableaus[src].getTail()->isHidden()) tableaus[src].getTail()->flipHiddenStatus();
 
     }
 
@@ -256,6 +340,7 @@ public:
         if (foundations[foundationNumber].isEmpty() && tab->getRank() == 1) {
             auto temp = tableaus[tableauNumber].removeTail();   
             foundations[foundationNumber].push(temp->data);    
+            if (tableaus[tableauNumber].getTail() && tableaus[tableauNumber].getTail()->isHidden()) tableaus[tableauNumber].getTail()->flipHiddenStatus();
             return;
         }
         
@@ -268,6 +353,10 @@ public:
 
         auto temp = tableaus[tableauNumber].removeTail();   // Returns the tail by reference
         foundations[foundationNumber].push(temp->data);     // Pushes to the foundation as the new head
+
+        // Flipping last card of source destination (if required)
+
+        if (tableaus[tableauNumber].getTail() && tableaus[tableauNumber].getTail()->isHidden()) tableaus[tableauNumber].getTail()->flipHiddenStatus();
     }
 
     void moveFromFoundationToTableau(int foundationNumber, int tableauNumber) {
@@ -434,12 +523,20 @@ public:
         return (stockPile.isEmpty() && wastePile.isEmpty() && foundations[0].getSize() == 13 && foundations[1].getSize() == 13 && foundations[2].getSize() == 13 && foundations[3].getSize() == 13);
     }
 
+    void mainLoop() {
+        while (!isGameWon()) {
+            //Sleep(2000);
+            printGameState();
+            parseCommand(inputCommand());
+        }
+    }
+
 };
 
 int main() {
     SetConsoleOutputCP(CP_UTF8);  // Set the console to UTF-8
     Game game;
-    game.printGameState();
+    game.mainLoop();
 
     return 0;
 }

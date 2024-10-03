@@ -102,6 +102,7 @@ public:
 		Node* temp = tail;
 		tail = tail->prev;
 		if (tail) tail->next = nullptr;
+		else head = tail = nullptr;
 		return temp;
 	}
 
