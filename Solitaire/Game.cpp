@@ -144,11 +144,9 @@ public:
             for (int j = 0; j < 7; j++) {
                 if (iters[j] != DLL<Card*>::ListIterator(nullptr)) {
                     (*iters[j])->display();
-                    cout << "\t\t";
                 }
-                else {
-                    cout << "\t\t";
-                }
+
+                cout << "\t\t";
                 ++iters[j];
             }
             cout << endl;
@@ -160,24 +158,39 @@ public:
         cout << "Please enter command with proper syntax, given in the instruction set: ";
         getline(cin, line);
 
-        string cmd = "";
-        string src = "";
-        string dest = "";
-        int count = 0;
+        string cmd, src, dest;
+        int count = 1;
+
+        // If the length is wrong so is the syntax
+
+        if (line.length() != 12 && line.length() != 9 && line.length() != 4) {
+            return Command("", "", "", 0);
+        }
 
         cmd = line.substr(0, 4);
+        
+        // Wrong command
 
-        if (cmd != "draw" && cmd != "quit") {
-            if (line[5] == 'w') {
-                src[0] = 'w';
-                dest = line.substr(7, 8);
-                count = line[10];
-            }
-            else {
-                src = line.substr(5, 6);
-                dest = line.substr(8, 9);
-                count = line[11];
-            }
+        if (cmd != "draw" && cmd != "quit" && cmd != "exit" && cmd != "move") {
+            return Command("", "", "", 0);
+        }
+        
+        // These don't require any futher parameters
+        
+        if (cmd == "draw" || cmd == "quit" || cmd == "exit") {
+            return Command(cmd, "", "", 0);
+        }
+
+        // Handling wastepile case and other cases
+
+        if (line[5] == 'w') {
+            src = 'w';
+            dest = line.substr(7, 2);
+        }
+        else {
+            src = line.substr(5, 2);
+            dest = line.substr(8, 2);
+            count = line[11];
         }
 
         return Command(cmd, src, dest, count);
@@ -257,7 +270,7 @@ public:
         // Ensuring source is populated with card(s)
         
         if (!srcTab) {
-            cout << "You can not move cards from an empty tableau." << endl;
+            cout << "You can not move cards from an empty tableau or the tableau does not have enough cards." << endl;
             return;
         }
         
@@ -279,6 +292,8 @@ public:
 
         if (!destTab && srcTab->data->getRank() == 13) {
             tableaus[dest].append(tableaus[src].extract(n), n);
+            if (tableaus[src].getTail() && tableaus[src].getTail()->isHidden()) tableaus[src].getTail()->flipHiddenStatus();
+            moves++;
             return;
         }
 
@@ -304,6 +319,7 @@ public:
         // Flipping last card of source destination (if required)
 
         if (tableaus[src].getTail() && tableaus[src].getTail()->isHidden()) tableaus[src].getTail()->flipHiddenStatus();
+        moves++;
 
     }
 
@@ -341,6 +357,7 @@ public:
             auto temp = tableaus[tableauNumber].removeTail();   
             foundations[foundationNumber].push(temp->data);    
             if (tableaus[tableauNumber].getTail() && tableaus[tableauNumber].getTail()->isHidden()) tableaus[tableauNumber].getTail()->flipHiddenStatus();
+            moves++;
             return;
         }
         
@@ -357,6 +374,7 @@ public:
         // Flipping last card of source destination (if required)
 
         if (tableaus[tableauNumber].getTail() && tableaus[tableauNumber].getTail()->isHidden()) tableaus[tableauNumber].getTail()->flipHiddenStatus();
+        moves++;
     }
 
     void moveFromFoundationToTableau(int foundationNumber, int tableauNumber) {
@@ -383,6 +401,7 @@ public:
 
         if (!tab && fnd.getHead()->getRank() == 13) {
             tableaus[tableauNumber].insertTail(fnd.pop());
+            moves++;
             return;
         }
 
@@ -404,6 +423,7 @@ public:
         // Finally moving card from foundation to tableau
 
         tableaus[tableauNumber].insertTail(fnd.pop());
+        moves++;
     }
 
     void moveFromWasteToFoundation(int foundationNumber) {
@@ -457,6 +477,7 @@ public:
         
         Card* temp = wastePile.pop();
         foundations[foundationNumber].push(temp);
+        moves++;
     }
 
     void moveFromWasteToTableau(int tableauNumber) {
@@ -502,7 +523,7 @@ public:
         // Finally moving card from waste to tableau
 
         tableaus[tableauNumber].insertTail(wastePile.pop());
-
+        moves++;
     }
 
     void drawCardFromStock() {
@@ -517,6 +538,7 @@ public:
         // Pushing head of stockpile to wastepile
         Card* stockHead = stockPile.pop();
         wastePile.push(stockHead);
+        moves++;
     }
 
     bool isGameWon() {

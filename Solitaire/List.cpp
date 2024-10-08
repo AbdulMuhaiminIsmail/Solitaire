@@ -79,7 +79,6 @@ public:
 
 		tail->next = new Node(element, tail, nullptr);
 		tail = tail->next;
-		if (!head) head = tail;
 	}
 
 	void deleteHead() {

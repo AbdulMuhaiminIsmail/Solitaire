@@ -27,16 +27,8 @@ public:
     T pop() {
         T head = stack.getHead();
         stack.deleteHead();
-        size--;
+        if (!isEmpty()) --size;
         return head;
-    }
-
-    typename DLL<T>::ListIterator begin() {
-        return stack.fbegin();
-    }
-
-    typename DLL<T>::ListIterator end() {
-        return stack.fend();
     }
 
     void push(T& element) {
@@ -46,5 +38,13 @@ public:
 
     void print() {
         stack.printForward();
+    }
+
+    typename DLL<T>::ListIterator begin() {
+        return stack.fbegin();
+    }
+
+    typename DLL<T>::ListIterator end() {
+        return stack.fend();
     }
 };
