@@ -40,6 +40,10 @@ public:
 			return iter->data;
 		}
 
+		Node*& getIter() {
+			return iter;
+		}
+
 		bool operator == (const ListIterator& iter2) const {
 			return (this->iter == iter2.iter);
 		}

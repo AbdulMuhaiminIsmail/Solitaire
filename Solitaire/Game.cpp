@@ -16,6 +16,7 @@ using namespace std;
 class Game {
 private:
     int moves;
+    bool endGame;
     Stack<Card*> stockPile;
     Stack<Card*> wastePile;
     Stack<Card*> foundations[4];    
@@ -23,6 +24,38 @@ private:
 
 public:
     Game() : moves(0) { setupGame(); }
+    ~Game() {
+        // Clearing stockpile
+
+        for (const auto& card : stockPile) {
+            delete card;
+        }
+
+        // Clearing wastepile
+
+        for (const auto& card : wastePile) {
+            delete card;
+        }
+
+        // Clearing foundations
+
+        for (int i = 0; i < 4; i++) {
+            for (const auto& card : foundations[i]) {
+                delete card;
+            }
+        }
+
+        // Clearing tableaus
+
+        for (int i = 0; i < 7; i++) {
+            for (auto it = tableaus[i].fbegin(); it != tableaus[i].fend();) {
+                auto card = it.getIter();
+                auto temp = card->next;
+                delete card;
+                it = temp;
+            }
+        }
+    }
 
     void setupGame() {
         // Creating deck
@@ -140,7 +173,7 @@ public:
             iters[i] = tableaus[i].fbegin();
         }
 
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 13; i++) {
             for (int j = 0; j < 7; j++) {
                 if (iters[j] != DLL<Card*>::ListIterator(nullptr)) {
                     (*iters[j])->display();
@@ -199,7 +232,8 @@ public:
     
     void parseCommand(Command command) {
         if (command.getCmd() == "quit" || command.getCmd() == "exit") {
-            cout << "Thanks for playing Solitaire! Hope to see you again soon! ";
+            cout << "\n\nThanks for playing Solitaire! Hope to see you again soon! ";
+            endGame = true;
             return;
         }
 
@@ -546,19 +580,27 @@ public:
     }
 
     void mainLoop() {
-        while (!isGameWon()) {
-            //Sleep(2000);
+        while (!isGameWon() && !endGame) {
             printGameState();
             parseCommand(inputCommand());
+
+            if (isGameWon()) {
+                printGameState();
+                cout << "\n\n Congratulations on winning the game!" << endl;
+            }
         }
     }
 
 };
 
 int main() {
-    SetConsoleOutputCP(CP_UTF8);  // Set the console to UTF-8
-    Game game;
-    game.mainLoop();
+    {
+        SetConsoleOutputCP(CP_UTF8);  // Set the console to UTF-8
+        Game game;
+        game.mainLoop();
+    }
+    
+    _CrtDumpMemoryLeaks() ? cout << "\n\nMemory Leaks Found" : cout << "\n\nNo Memory Leaks Found.";
 
     return 0;
 }
